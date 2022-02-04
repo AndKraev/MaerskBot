@@ -60,7 +60,7 @@ def track(update: Update, context: CallbackContext) -> None:
 
         # Mirror messages to admin with report
         if context.dispatcher.bot_data["echo_requests"]:
-            if update.effective_chat.id == context.dispatcher.bot_data["admin_chat_id"]:
+            if update.effective_chat.id != context.dispatcher.bot_data["admin_chat_id"]:
                 context.bot.send_message(
                     chat_id=context.dispatcher.bot_data["admin_chat_id"],
                     text=report_text(number, reply, update.effective_chat.username),
