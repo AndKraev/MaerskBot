@@ -9,7 +9,8 @@ def fetch_from_list(shipment_list: List[str]) -> Iterator[requests.Response]:
     """Takes a list of shipment numbers and calls get_data to fetch data from maersk api
     If list consists of one number, fetches synchronously, if list is more than one,
     fetches asynchronously"""
-    url_list = tuple(os.environ["MAERSK_API"] + shipment for shipment in shipment_list)
+    api = os.environ["MAERSK_API"]
+    url_list = tuple(api + shipment for shipment in shipment_list)
 
     if len(url_list) == 1:
         return [get_data(url_list[0])]
