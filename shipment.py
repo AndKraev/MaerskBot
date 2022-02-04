@@ -1,8 +1,13 @@
 from dataclasses import dataclass
+from typing import Union
+
+import requests
 
 
 @dataclass
 class Shipment:
+    """Dataclass to store shipment's data"""
+
     td: str
     pol_city: str
     pol_country: str
@@ -13,6 +18,8 @@ class Shipment:
 
 @dataclass
 class Container:
+    """Dataclass to store container's data"""
+
     number: str
     size: str
     type: str
@@ -23,8 +30,9 @@ class Container:
     latest_date: str
 
 
-def parse_response(response):
-
+def parse_response(response: requests.Response) -> Union[Shipment, str]:
+    """Takes a response from api, checks status code and returns Shipment class or a
+    string with error message"""
     if response.status_code == 200:
         return shipment_from_dict(response.json())
 
@@ -38,7 +46,8 @@ def parse_response(response):
         return "Something went wrong"
 
 
-def shipment_from_dict(datadict):
+def shipment_from_dict(datadict: dict) -> Shipment:
+    """Creates Shipment dataclass from dict received from maersk API"""
     return Shipment(
         td=datadict.get("tpdoc_num") if "tpdoc_num" in datadict else None,
         pol_city=datadict["origin"].get("city") if "origin" in datadict else None,
@@ -57,7 +66,8 @@ def shipment_from_dict(datadict):
     )
 
 
-def container_from_dict(datadict):
+def container_from_dict(datadict: dict) -> Container:
+    """Creates Container dataclass from dict received from maersk API"""
     return Container(
         number=datadict.get("container_num"),
         size=datadict.get("container_size"),
@@ -77,4 +87,5 @@ def container_from_dict(datadict):
 
 
 def convert_datetime(date_and_time: str) -> str:
+    """Converts data and time received from maersk APO to a format 'date, time'"""
     return ", ".join(date_and_time[:-4].split("T", 1))

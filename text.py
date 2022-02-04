@@ -1,8 +1,12 @@
 import re
 from typing import List
 
+from shipment import Shipment
+
 
 def parse_request_text(request: str) -> List[str]:
+    """Finds container and transport document numbers in a string and return a list of
+    unique numbers"""
     pattern = r"[A-Za-z]{3}U[0-9]{7}|[a-zA-Z0-9]{9}"
     unique_list = []
 
@@ -13,7 +17,8 @@ def parse_request_text(request: str) -> List[str]:
     return unique_list
 
 
-def text_for_shipment(shipment):
+def text_for_shipment(shipment: Shipment) -> str:
+    """Take dataclass Shipments and creates a text for response"""
     general_text = (
         (f"<b>TD:</b> {shipment.td}\n" if shipment.td else "")
         + (
@@ -50,7 +55,8 @@ def text_for_shipment(shipment):
     return general_text + "\n\n" + containers_text
 
 
-def report_text(request, response, username):
+def report_text(request: str, response: str, username: str) -> str:
+    """Creates text for a report to send to admin"""
     return (
         f"[REPORT]\n"
         f"Username: {username}\n\n"

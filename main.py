@@ -4,24 +4,30 @@ import os
 from cachetools import TTLCache
 from telegram import Update
 from telegram.ext import (
-    Updater,
-    CommandHandler,
     CallbackContext,
-    MessageHandler,
+    CommandHandler,
     Filters,
+    MessageHandler,
+    Updater,
 )
 
-from text import parse_request_text, text_for_shipment, report_text
 from services import fetch_from_list
-from shipment import parse_response, Shipment
+from shipment import Shipment, parse_response
+from text import parse_request_text, report_text, text_for_shipment
 
 
 def start(update: Update, context: CallbackContext) -> None:
     """Sends explanation on how to use the bot."""
-    update.message.reply_text("Hi! This is a test message")
+    update.message.reply_text(
+        "Hi! This is Maersk tracking bot.\n"
+        "Please send a container or transport document number to "
+        "track your shipment. You can send up to 10 shipments at "
+        "a time."
+    )
 
 
 def echo_requests(update: Update, context: CallbackContext) -> None:
+    """Turns on and off sending reports to admin with request and response details."""
     if context.args:
         if context.args[0].strip().lower() == "true":
             context.bot_data["echo_requests"] = True
@@ -33,6 +39,9 @@ def echo_requests(update: Update, context: CallbackContext) -> None:
 
 
 def track(update: Update, context: CallbackContext) -> None:
+    """Handles shipments and send response to a user. If shipment is not cached,
+    the data is fetched from maersk api. Also sends reports to admin if activated
+    """
     cache = context.dispatcher.bot_data["cache"]
     shipment_numbers = parse_request_text(update.message.text.upper())
     request_list = [shipment for shipment in shipment_numbers if shipment not in cache]
@@ -55,27 +64,24 @@ def track(update: Update, context: CallbackContext) -> None:
                 context.bot.send_message(
                     chat_id=context.dispatcher.bot_data["admin_chat_id"],
                     text=report_text(number, reply, update.effective_chat.username),
-                    parse_mode="HTML"
+                    parse_mode="HTML",
                 )
 
 
-def main(token: str, admin_chat_id, cache_size, cache_time) -> None:
-    """Run bot."""
-    # Create the Updater and pass it your bot's token.
-    updater = Updater(token)
-
+def main(updater: Updater, cache: TTLCache, admin_id: int) -> None:
+    """Main function that launches bot and registers handlers."""
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
 
     # Set echo_requests to True
     dispatcher.bot_data["echo_requests"] = True
-    dispatcher.bot_data["admin_chat_id"] = admin_chat_id
-    dispatcher.bot_data["cache"] = TTLCache(maxsize=cache_size, ttl=cache_time)
+    dispatcher.bot_data["admin_chat_id"] = admin_id
+    dispatcher.bot_data["cache"] = cache
 
     # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(
-        CommandHandler("echo", echo_requests, filters=Filters.chat(admin_chat_id))
+        CommandHandler("echo", echo_requests, filters=Filters.chat(admin_id))
     )
     dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), track))
 
@@ -90,4 +96,9 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         level=logging.DEBUG,
     )
-    main(os.environ["TOKEN"], admin_chat_id=1525941072, cache_size=500, cache_time=3600)
+
+    main(
+        Updater(os.environ["MAERSK_BOT"]),
+        TTLCache(maxsize=500, ttl=3600),
+        admin_id=1525941072,
+    )
