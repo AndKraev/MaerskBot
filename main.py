@@ -44,6 +44,13 @@ def track(update: Update, context: CallbackContext) -> None:
     """
     cache = context.dispatcher.bot_data["cache"]
     shipment_numbers = parse_request_text(update.message.text.upper())
+
+    # Shorten request number to 10
+    if len(shipment_numbers) > 10:
+        shipment_numbers = shipment_numbers[:10]
+        update.message.reply_text("Your request is too large, only first 10 shipments "
+                                  "will be tracked")
+
     request_list = [shipment for shipment in shipment_numbers if shipment not in cache]
 
     if request_list:
@@ -94,7 +101,7 @@ if __name__ == "__main__":
     # Enable logging
     logging.basicConfig(
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        level=logging.DEBUG,
+        level=logging.INFO,
     )
 
     main(
