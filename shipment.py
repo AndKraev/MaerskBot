@@ -72,7 +72,7 @@ def container_from_dict(datadict: dict) -> Container:
         number=datadict.get("container_num"),
         size=datadict.get("container_size"),
         type=datadict.get("container_type"),
-        eta=datadict.get("eta_final_delivery"),
+        eta=convert_datetime(datadict.get("eta_final_delivery")),
         latest_act=datadict["latest"].get("activity") if "latest" in datadict else None,
         latest_city=datadict["latest"].get("city") if "latest" in datadict else None,
         latest_country=(
